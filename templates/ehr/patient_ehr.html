@@ -1,0 +1,142 @@
+{% extends "core/app_base.html" %}
+{% block title %}EHR — {{ patient.full_name }}{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">{{ patient.full_name }} — Electronic Health Record</h1>
+  <div style="font-size:13px;color:var(--muted)">MRN {{ patient.mrn }} · <a href="{% url 'patients:detail' patient.pk %}">Back to patient profile</a></div>
+</div>
+
+{% if allergies %}
+<div class="card" style="background:#FBEAE8;border-color:#F1CFC9">
+  <h2 style="font-size:14px;color:#8A362D;margin-bottom:8px">⚠ Allergies</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    {% for a in allergies %}
+    <span class="badge badge-red">{{ a.substance }} — {{ a.get_severity_display }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if lab_orders %}
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:12px">Lab orders &amp; results</h2>
+  <table>
+    <tr><th>Test</th><th>Status</th><th>Result</th><th>Ordered</th><th></th></tr>
+    {% for order in lab_orders %}
+    <tr>
+      <td>{{ order.test_name }}</td>
+      <td>
+        {% if order.status == 'RESULTED' %}<span class="badge badge-green">Resulted</span>
+        {% elif order.status == 'SAMPLE_COLLECTED' %}<span class="badge badge-amber">Sample collected</span>
+        {% elif order.status == 'CANCELLED' %}<span class="badge" style="background:#EEE;color:#777">Cancelled</span>
+        {% else %}<span class="badge badge-amber">Ordered</span>{% endif %}
+      </td>
+      <td>
+        {% if order.result %}
+        {{ order.result.value }}{{ order.result.unit }}
+        {% if order.result.is_abnormal %}<span class="badge badge-red" style="margin-left:4px">Abnormal</span>{% endif %}
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ order.ordered_at|date:"d M Y" }}</td>
+      <td>
+        {% if can.order_lab and order.status == 'ORDERED' or can.order_lab and order.status == 'SAMPLE_COLLECTED' %}
+        <form action="{% url 'laboratory:cancel' order.pk %}" method="post" style="display:inline" onsubmit="return confirm('Cancel this lab order?')">
+          {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--red);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Cancel</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div style="display:flex;gap:20px">
+  <div class="card" style="flex:2">
+    <h2 style="font-size:15px;margin-bottom:12px">Record a new encounter</h2>
+    <form method="post" style="display:flex;flex-direction:column;gap:14px">
+      {% csrf_token %}
+      <div>
+        <label for="{{ encounter_form.reason.id_for_label }}">{{ encounter_form.reason.label }}</label>
+        {{ encounter_form.reason }}
+        {% if encounter_form.reason.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ encounter_form.reason.errors|striptags }}</div>{% endif %}
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1"><label for="{{ encounter_form.temperature_c.id_for_label }}">{{ encounter_form.temperature_c.label }}</label>{{ encounter_form.temperature_c }}
+          {% if encounter_form.temperature_c.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ encounter_form.temperature_c.errors|striptags }}</div>{% endif %}
+        </div>
+        <div style="flex:1"><label for="{{ encounter_form.blood_pressure.id_for_label }}">{{ encounter_form.blood_pressure.label }}</label>{{ encounter_form.blood_pressure }}</div>
+        <div style="flex:1"><label for="{{ encounter_form.pulse_bpm.id_for_label }}">{{ encounter_form.pulse_bpm.label }}</label>{{ encounter_form.pulse_bpm }}
+          {% if encounter_form.pulse_bpm.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ encounter_form.pulse_bpm.errors|striptags }}</div>{% endif %}
+        </div>
+        <div style="flex:1"><label for="{{ encounter_form.spo2_percent.id_for_label }}">{{ encounter_form.spo2_percent.label }}</label>{{ encounter_form.spo2_percent }}
+          {% if encounter_form.spo2_percent.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ encounter_form.spo2_percent.errors|striptags }}</div>{% endif %}
+        </div>
+      </div>
+      <div>
+        <label for="{{ encounter_form.diagnosis.id_for_label }}">{{ encounter_form.diagnosis.label }}</label>
+        {{ encounter_form.diagnosis }}
+      </div>
+      <div>
+        <label for="{{ encounter_form.note.id_for_label }}">{{ encounter_form.note.label }}</label>
+        {{ encounter_form.note }}
+      </div>
+      <button type="submit" name="add_encounter" style="align-self:flex-start">Save encounter</button>
+    </form>
+  </div>
+
+  <div class="card" style="flex:1">
+    <h2 style="font-size:15px;margin-bottom:12px">Add allergy</h2>
+    <form method="post" style="display:flex;flex-direction:column;gap:12px">
+      {% csrf_token %}
+      <div><label for="{{ allergy_form.substance.id_for_label }}">{{ allergy_form.substance.label }}</label>{{ allergy_form.substance }}
+        {% if allergy_form.substance.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ allergy_form.substance.errors|striptags }}</div>{% endif %}
+      </div>
+      <div><label for="{{ allergy_form.reaction.id_for_label }}">{{ allergy_form.reaction.label }}</label>{{ allergy_form.reaction }}</div>
+      <div><label for="{{ allergy_form.severity.id_for_label }}">{{ allergy_form.severity.label }}</label>{{ allergy_form.severity }}
+        {% if allergy_form.severity.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ allergy_form.severity.errors|striptags }}</div>{% endif %}
+      </div>
+      <button type="submit" name="add_allergy">Add allergy</button>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:12px">Encounter history</h2>
+  {% for e in encounters %}
+  <div style="padding:14px 0;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between">
+      <div style="font-weight:600;font-size:14px">{{ e.reason }}</div>
+      <div style="font-size:12px;color:var(--muted)">{{ e.date|date:"d M Y H:i" }} · {{ e.clinician|default:"—" }}</div>
+    </div>
+    {% for v in e.vitals.all|slice:":1" %}
+    <div style="margin-top:6px;font-size:12px;color:var(--muted)">
+      {% if v.temperature_c %}Temp {{ v.temperature_c }}°C{% endif %}
+      {% if v.blood_pressure %} · BP {{ v.blood_pressure }}{% endif %}
+      {% if v.pulse_bpm %} · Pulse {{ v.pulse_bpm }} bpm{% endif %}
+      {% if v.spo2_percent %} · SpO₂ {{ v.spo2_percent }}%{% endif %}
+    </div>
+    {% endfor %}
+    {% for d in e.diagnoses.all %}
+    <div style="margin-top:4px"><span class="badge badge-amber">{{ d.description }}</span></div>
+    {% endfor %}
+    {% for n in e.notes.all %}
+    <div style="margin-top:6px;font-size:13px">{{ n.body }}</div>
+    {% endfor %}
+    {% with visit=e.opd_visit %}
+    {% if visit %}
+      {% for rx in visit.prescriptions.all %}
+      <div style="margin-top:4px;font-size:12px;color:var(--muted)">℞ {{ rx.drug_name }} — {{ rx.dosage }}, {{ rx.frequency }} for {{ rx.duration_days }} days
+        {% if rx.dispense_record %}<span class="badge badge-green" style="margin-left:6px">Dispensed</span>{% else %}<span class="badge badge-amber" style="margin-left:6px">Pending</span>{% endif %}</div>
+      {% endfor %}
+      {% for ref in visit.referrals.all %}
+      <div style="margin-top:4px;font-size:12px;color:var(--muted)">→ Referred to {{ ref.to_department }}: {{ ref.reason }}</div>
+      {% endfor %}
+    {% endif %}
+    {% endwith %}
+  </div>
+  {% empty %}
+  <div style="color:var(--muted);font-size:13px">No encounters recorded yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

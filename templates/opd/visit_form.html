@@ -1,0 +1,39 @@
+{% extends "core/app_base.html" %}
+{% block title %}OPD consultation — {{ patient.full_name }}{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">OPD consultation — {{ patient.full_name }}</h1>
+  <div style="font-size:13px;color:var(--muted)">MRN {{ patient.mrn }}{% if appointment %} · appointment at {{ appointment.scheduled_for|date:"H:i" }}{% endif %} · <a href="{% url 'patients:detail' patient.pk %}">Back to patient profile</a></div>
+</div>
+<form method="post" class="card" style="max-width:520px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div style="color:var(--red);font-size:13px">{{ form.non_field_errors|striptags }}</div>
+  {% endif %}
+  <div>
+    <label for="{{ form.chief_complaint.id_for_label }}">{{ form.chief_complaint.label }}</label>
+    {{ form.chief_complaint }}
+    {% if form.chief_complaint.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ form.chief_complaint.errors|striptags }}</div>{% endif %}
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Prescription (optional)</div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:2"><label for="{{ form.drug_name.id_for_label }}">{{ form.drug_name.label }}</label>{{ form.drug_name }}</div>
+      <div style="flex:1"><label for="{{ form.dosage.id_for_label }}">{{ form.dosage.label }}</label>{{ form.dosage }}</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:2"><label for="{{ form.frequency.id_for_label }}">{{ form.frequency.label }}</label>{{ form.frequency }}</div>
+      <div style="flex:1"><label for="{{ form.duration_days.id_for_label }}">{{ form.duration_days.label }}</label>{{ form.duration_days }}</div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Referral (optional)</div>
+    <div><label for="{{ form.referral_department.id_for_label }}">{{ form.referral_department.label }}</label>{{ form.referral_department }}</div>
+    <div style="margin-top:10px"><label for="{{ form.referral_reason.id_for_label }}">{{ form.referral_reason.label }}</label>{{ form.referral_reason }}</div>
+  </div>
+
+  <button type="submit" style="align-self:flex-start">Save consultation</button>
+</form>
+{% endblock %}

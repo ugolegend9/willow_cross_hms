@@ -1,0 +1,27 @@
+{% extends "core/app_base.html" %}
+{% block title %}{{ patient.full_name }} — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <h1 style="font-size:22px">{{ patient.full_name }}</h1>
+    <div style="font-size:13px;color:var(--muted)">MRN {{ patient.mrn }} · {{ patient.get_gender_display }} · DOB {{ patient.date_of_birth }}</div>
+  </div>
+  <div style="display:flex;gap:10px">
+    {% if can.consult %}<a href="{% url 'opd:consult' patient.pk %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Start OPD consultation</a>{% endif %}
+    {% if can.admit %}<a href="{% url 'ipd:admit' patient.pk %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Admit to ward</a>{% endif %}
+    {% if can.order_lab %}<a href="{% url 'laboratory:order' patient.pk %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Order lab test</a>{% endif %}
+    {% if can.pharmacy %}<a href="{% url 'pharmacy:dispense' patient.pk %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Dispense medication</a>{% endif %}
+    {% if can.billing %}<a href="{% url 'billing:create' %}?patient={{ patient.pk }}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">New invoice</a>{% endif %}
+    {% if can.view_ehr %}<a href="{% url 'ehr:patient_ehr' patient.pk %}" class="btn" style="display:inline-flex;align-items:center">Open EHR</a>{% endif %}
+  </div>
+</div>
+<div class="card" style="max-width:480px">
+  <table>
+    <tr><td>Phone</td><td>{{ patient.phone_number|default:"—" }}</td></tr>
+    <tr><td>Email</td><td>{{ patient.email|default:"—" }}</td></tr>
+    <tr><td>Blood group</td><td>{{ patient.get_blood_group_display }}</td></tr>
+    <tr><td>Address</td><td>{{ patient.address|default:"—" }}</td></tr>
+    <tr><td>Registered</td><td>{{ patient.registered_at|date:"d M Y H:i" }}</td></tr>
+  </table>
+</div>
+{% endblock %}

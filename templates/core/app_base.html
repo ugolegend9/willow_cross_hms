@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="layout">
+  <div class="sidebar">
+    <div class="brand">Willow Cross</div>
+    <nav>
+      <a href="{% url 'core:dashboard' %}" class="{% if active_nav == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{% url 'patients:list' %}" class="{% if active_nav == 'patients' %}active{% endif %}">Patients</a>
+      <a href="{% url 'appointments:list' %}" class="{% if active_nav == 'appointments' %}active{% endif %}">Appointments</a>
+      <a href="{% url 'opd:queue' %}" class="{% if active_nav == 'opd' %}active{% endif %}">OPD</a>
+      <a href="{% url 'ipd:bed_map' %}" class="{% if active_nav == 'ipd' %}active{% endif %}">IPD / Beds</a>
+      {% if can.pharmacy %}<a href="{% url 'pharmacy:queue' %}" class="{% if active_nav == 'pharmacy' %}active{% endif %}">Pharmacy</a>{% endif %}
+      {% if can.lab %}<a href="{% url 'laboratory:queue' %}" class="{% if active_nav == 'laboratory' %}active{% endif %}">Laboratory</a>{% endif %}
+      {% if can.billing %}<a href="{% url 'billing:list' %}" class="{% if active_nav == 'billing' %}active{% endif %}">Billing</a>{% endif %}
+      <a href="#" class="soon" tabindex="-1" aria-disabled="true">Reports <span class="tag">Soon</span></a>
+    </nav>
+    {% if can.admin_site %}
+    <nav style="margin-top:auto">
+      <a href="{% url 'admin:index' %}">Admin panel</a>
+    </nav>
+    {% endif %}
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <form action="{% url 'patients:list' %}" method="get" style="width:340px;max-width:100%;margin:0">
+        <input type="text" name="q" placeholder="Search patients by name or MRN…">
+      </form>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span style="font-size:13px">{{ request.user.get_full_name|default:request.user.username }} · {{ request.user.get_role_display }}</span>
+        <a href="{% url 'accounts:password_change' %}" style="font-size:13px">Change password</a>
+        <form action="{% url 'accounts:logout' %}" method="post" style="margin:0">
+          {% csrf_token %}
+          <button type="submit" style="height:auto;background:none;border:none;color:var(--teal);font-size:13px;font-weight:400;font-family:inherit;cursor:pointer;padding:0">Sign out</button>
+        </form>
+      </div>
+    </div>
+    <div class="content">
+      {% if messages %}
+      <div style="display:flex;flex-direction:column;gap:8px">
+        {% for message in messages %}
+        <div class="badge badge-green" style="width:fit-content;padding:8px 14px">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

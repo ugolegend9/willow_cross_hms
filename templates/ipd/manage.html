@@ -1,0 +1,86 @@
+{% extends "core/app_base.html" %}
+{% block title %}Manage beds — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <h1 style="font-size:22px">Manage beds &amp; wards</h1>
+    <div style="font-size:13px;color:var(--muted)"><a href="{% url 'ipd:bed_map' %}">&larr; Back to the bed map</a></div>
+  </div>
+</div>
+
+<div style="display:flex;gap:20px;align-items:flex-start">
+  <form method="post" class="card" style="flex:1;display:flex;flex-direction:column;gap:12px">
+    {% csrf_token %}
+    <h2 style="font-size:15px">Add a ward</h2>
+    <div>
+      <label for="{{ ward_form.name.id_for_label }}">Ward name</label>
+      {{ ward_form.name }}
+      {% if ward_form.name.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ ward_form.name.errors|striptags }}</div>{% endif %}
+    </div>
+    <button type="submit" name="add_ward" style="align-self:flex-start">Add ward</button>
+  </form>
+
+  <form method="post" class="card" style="flex:2;display:flex;flex-direction:column;gap:12px">
+    {% csrf_token %}
+    <h2 style="font-size:15px">Add beds</h2>
+    {% if beds_form.non_field_errors %}<div style="color:var(--red);font-size:13px">{{ beds_form.non_field_errors|striptags }}</div>{% endif %}
+    <div>
+      <label for="{{ beds_form.ward.id_for_label }}">Ward</label>
+      {{ beds_form.ward }}
+      {% if beds_form.ward.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ beds_form.ward.errors|striptags }}</div>{% endif %}
+    </div>
+    <div>
+      <label for="{{ beds_form.bed_numbers.id_for_label }}">Bed numbers</label>
+      {{ beds_form.bed_numbers }}
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">{{ beds_form.bed_numbers.help_text }}</div>
+      {% if beds_form.bed_numbers.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ beds_form.bed_numbers.errors|striptags }}</div>{% endif %}
+    </div>
+    <button type="submit" name="add_beds" style="align-self:flex-start">Add beds</button>
+  </form>
+</div>
+
+{% for entry in ward_data %}
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:10px">{{ entry.ward.name }}</h2>
+  <table style="table-layout:fixed">
+    <tr><th style="width:18%">Bed</th><th style="width:18%">Status</th><th style="width:30%">Patient</th><th style="width:34%"></th></tr>
+    {% for item in entry.beds %}
+    <tr>
+      <td>{{ item.bed.bed_number }}</td>
+      <td>
+        {% if item.bed.status == 'AVAILABLE' %}<span class="badge badge-green">Available</span>
+        {% elif item.bed.status == 'OCCUPIED' %}<span class="badge badge-red">Occupied</span>
+        {% else %}<span class="badge badge-amber">Maintenance</span>{% endif %}
+      </td>
+      <td>{% if item.admission %}{{ item.admission.patient.full_name }}{% else %}—{% endif %}</td>
+      <td style="white-space:nowrap;text-align:right">
+        {% if item.bed.status == 'OCCUPIED' %}
+          <span style="font-size:12px;color:var(--muted)">Discharge the patient first</span>
+        {% else %}
+          {% if item.bed.status == 'AVAILABLE' %}
+          <form action="{% url 'ipd:bed_status' item.bed.pk 'MAINTENANCE' %}" method="post" style="display:inline">
+            {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--teal);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Mark as maintenance</button>
+          </form>
+          {% else %}
+          <form action="{% url 'ipd:bed_status' item.bed.pk 'AVAILABLE' %}" method="post" style="display:inline">
+            {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--teal);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Make available</button>
+          </form>
+          {% endif %}
+          {% if item.bed.admission_count == 0 %}
+           ·
+          <form action="{% url 'ipd:bed_delete' item.bed.pk %}" method="post" style="display:inline" onsubmit="return confirm('Remove bed {{ item.bed.bed_number|escapejs }} from {{ entry.ward.name|escapejs }}?')">
+            {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--red);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Remove</button>
+          </form>
+          {% endif %}
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="color:var(--muted)">No beds in this ward yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% empty %}
+<div class="card" style="color:var(--muted)">No wards yet. Add one above, then add its beds.</div>
+{% endfor %}
+{% endblock %}

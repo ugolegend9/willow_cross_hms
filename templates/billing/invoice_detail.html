@@ -1,0 +1,97 @@
+{% extends "core/app_base.html" %}
+{% load humanize %}
+{% block title %}Invoice #{{ invoice.pk }} — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <h1 style="font-size:22px">Invoice #{{ invoice.pk }} — {{ invoice.patient.full_name }}</h1>
+    <div style="font-size:13px;color:var(--muted)">{{ invoice.created_at|date:"d M Y H:i" }}</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="{% url 'billing:print' invoice.pk %}" target="_blank" rel="noopener" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Print invoice</a>
+    {% if invoice.status == 'PAID' %}<span class="badge badge-green">Paid</span>
+    {% elif invoice.status == 'PARTIAL' %}<span class="badge badge-amber">Partial</span>
+    {% elif invoice.status == 'VOID' %}<span class="badge" style="background:#EEE;color:#777">Void</span>
+    {% else %}<span class="badge badge-red">Unpaid</span>{% endif %}
+  </div>
+</div>
+
+<div style="display:flex;gap:20px">
+  <div class="card" style="flex:2">
+    <h2 style="font-size:15px;margin-bottom:12px">Line items</h2>
+    <table>
+      <tr><th>Description</th><th style="text-align:right">Amount</th></tr>
+      {% for item in invoice.line_items.all %}
+      <tr><td>{{ item.description }}</td><td style="text-align:right">₦{{ item.amount|floatformat:2|intcomma }}</td></tr>
+      {% endfor %}
+    </table>
+    <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:14px">
+      <span>Total</span><span style="font-weight:600">₦{{ invoice.total|floatformat:2|intcomma }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:14px">
+      <span>Paid</span><span>₦{{ invoice.amount_paid|floatformat:2|intcomma }}</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:14px;font-weight:600">
+      <span>Balance</span><span>₦{{ invoice.balance|floatformat:2|intcomma }}</span>
+    </div>
+
+    <h2 style="font-size:15px;margin:20px 0 12px">Payment history</h2>
+    {% for payment in invoice.payments.all %}
+    <div style="padding:8px 0;border-top:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between">
+      <span>{{ payment.get_method_display }} — {{ payment.paid_at|date:"d M Y H:i" }}</span>
+      <span>₦{{ payment.amount|floatformat:2|intcomma }}</span>
+    </div>
+    {% empty %}
+    <div style="color:var(--muted);font-size:13px">No payments recorded yet.</div>
+    {% endfor %}
+  </div>
+
+  <div style="flex:1;display:flex;flex-direction:column;gap:20px">
+  <div class="card">
+    <h2 style="font-size:15px;margin-bottom:12px">Record a payment</h2>
+    {% if invoice.status == 'VOID' %}
+    <div style="color:var(--muted);font-size:13px">This invoice is void, so payments can't be recorded.</div>
+    {% elif invoice.balance <= 0 %}
+    <div style="color:var(--muted);font-size:13px">This invoice is fully paid.</div>
+    {% else %}
+    <form method="post" style="display:flex;flex-direction:column;gap:12px">
+      {% csrf_token %}
+      <div>
+        <label for="{{ payment_form.amount.id_for_label }}">{{ payment_form.amount.label }}</label>
+        {{ payment_form.amount }}
+        {% if payment_form.amount.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ payment_form.amount.errors|striptags }}</div>{% endif %}
+      </div>
+      <div>
+        <label for="{{ payment_form.method.id_for_label }}">{{ payment_form.method.label }}</label>
+        {{ payment_form.method }}
+      </div>
+      <button type="submit" name="add_payment">Record payment</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:15px;margin-bottom:12px">Add a charge</h2>
+    {% if invoice.status == 'VOID' %}
+    <div style="color:var(--muted);font-size:13px">This invoice is void, so charges can't be added.</div>
+    {% else %}
+    <form method="post" style="display:flex;flex-direction:column;gap:12px">
+      {% csrf_token %}
+      <div>
+        <label for="{{ line_form.description.id_for_label }}">{{ line_form.description.label }}</label>
+        {{ line_form.description }}
+        {% if line_form.description.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ line_form.description.errors|striptags }}</div>{% endif %}
+      </div>
+      <div>
+        <label for="{{ line_form.amount.id_for_label }}">{{ line_form.amount.label }}</label>
+        {{ line_form.amount }}
+        {% if line_form.amount.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ line_form.amount.errors|striptags }}</div>{% endif %}
+      </div>
+      {% if invoice.status == 'PAID' %}<div style="font-size:12px;color:var(--muted)">This invoice is fully paid. Adding a charge will reopen it as partially paid.</div>{% endif %}
+      <button type="submit" name="add_line">Add charge</button>
+    </form>
+    {% endif %}
+  </div>
+  </div>
+</div>
+{% endblock %}

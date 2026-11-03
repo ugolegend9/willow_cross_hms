@@ -1,0 +1,19 @@
+{% extends "core/app_base.html" %}
+{% block title %}Order lab test — {{ patient.full_name }}{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">Order a lab test for {{ patient.full_name }}</h1>
+  <div style="font-size:13px;color:var(--muted)">MRN {{ patient.mrn }} · <a href="{% url 'patients:detail' patient.pk %}">Back to patient profile</a></div>
+</div>
+<form method="post" class="card" style="max-width:460px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {% for field in form %}
+  <div>
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% if field.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ field.errors|striptags }}</div>{% endif %}
+  </div>
+  {% endfor %}
+  <button type="submit" style="align-self:flex-start">Order test</button>
+</form>
+{% endblock %}

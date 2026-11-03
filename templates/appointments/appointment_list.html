@@ -1,0 +1,48 @@
+{% extends "core/app_base.html" %}
+{% block title %}Appointments — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1 style="font-size:22px">Appointments</h1>
+  {% if can.book %}<a href="{% url 'appointments:create' %}" class="btn" style="display:inline-flex;align-items:center">Book appointment</a>{% endif %}
+</div>
+<div style="display:flex;gap:8px">
+  <a href="?scope=today" class="btn" style="background:{% if scope == 'today' %}var(--teal){% else %}#fff{% endif %};color:{% if scope == 'today' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Today</a>
+  <a href="?scope=upcoming" class="btn" style="background:{% if scope == 'upcoming' %}var(--teal){% else %}#fff{% endif %};color:{% if scope == 'upcoming' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Upcoming</a>
+  <a href="?scope=past" class="btn" style="background:{% if scope == 'past' %}var(--teal){% else %}#fff{% endif %};color:{% if scope == 'past' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Past</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Date &amp; time</th><th>Patient</th><th>Doctor</th><th>Department</th><th>Status</th><th></th></tr>
+    {% for appt in appointments %}
+    <tr>
+      <td>{{ appt.scheduled_for|date:"d M Y H:i" }}</td>
+      <td><a href="{% url 'patients:detail' appt.patient.pk %}">{{ appt.patient.full_name }}</a></td>
+      <td>{{ appt.doctor }}</td>
+      <td>{{ appt.department|default:"—" }}</td>
+      <td>
+        {% if appt.status == 'SCHEDULED' %}<span class="badge badge-amber">{{ appt.get_status_display }}</span>
+        {% elif appt.status == 'CHECKED_IN' %}<span class="badge badge-green">{{ appt.get_status_display }}</span>
+        {% elif appt.status == 'COMPLETED' %}<span class="badge badge-green">{{ appt.get_status_display }}</span>
+        {% else %}<span class="badge badge-red">{{ appt.get_status_display }}</span>{% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        {% if not can.book %}{% elif appt.status == 'SCHEDULED' %}
+        <form action="{% url 'appointments:set_status' appt.pk 'CHECKED_IN' %}" method="post" style="display:inline">
+          {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--teal);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Check in</button>
+        </form> ·
+        <form action="{% url 'appointments:set_status' appt.pk 'CANCELLED' %}" method="post" style="display:inline">
+          {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--red);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Cancel</button>
+        </form>
+        {% elif appt.status == 'CHECKED_IN' %}
+        <form action="{% url 'appointments:set_status' appt.pk 'COMPLETED' %}" method="post" style="display:inline">
+          {% csrf_token %}<button type="submit" style="height:auto;background:none;border:none;color:var(--teal);font-size:12px;font-family:inherit;cursor:pointer;padding:0">Mark completed</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="color:var(--muted)">No appointments in this view.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

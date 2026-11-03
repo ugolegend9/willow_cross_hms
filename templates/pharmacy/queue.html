@@ -1,0 +1,26 @@
+{% extends "core/app_base.html" %}
+{% block title %}Pharmacy Queue — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1 style="font-size:22px">Pending prescriptions</h1>
+  <a href="{% url 'pharmacy:inventory' %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Inventory</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Patient</th><th>Drug</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Prescribed by</th><th></th></tr>
+    {% for rx in pending %}
+    <tr>
+      <td>{{ rx.opd_visit.patient.full_name }}</td>
+      <td>{{ rx.drug_name }}</td>
+      <td>{{ rx.dosage }}</td>
+      <td>{{ rx.frequency }}</td>
+      <td>{{ rx.duration_days }} days</td>
+      <td>{{ rx.opd_visit.doctor|default:"—" }}</td>
+      <td><a href="{% url 'pharmacy:dispense_from_prescription' rx.opd_visit.patient.pk rx.pk %}" class="btn" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;font-size:12px">Dispense</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" style="color:var(--muted)">No pending prescriptions.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

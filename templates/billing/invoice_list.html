@@ -1,0 +1,37 @@
+{% extends "core/app_base.html" %}
+{% load humanize %}
+{% block title %}Billing — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1 style="font-size:22px">Billing</h1>
+  <a href="{% url 'billing:create' %}" class="btn" style="display:inline-flex;align-items:center">New invoice</a>
+</div>
+<div style="display:flex;gap:8px">
+  <a href="?status=all" class="btn" style="background:{% if status == 'all' %}var(--teal){% else %}#fff{% endif %};color:{% if status == 'all' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">All</a>
+  <a href="?status=unpaid" class="btn" style="background:{% if status == 'unpaid' %}var(--teal){% else %}#fff{% endif %};color:{% if status == 'unpaid' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Unpaid</a>
+  <a href="?status=partial" class="btn" style="background:{% if status == 'partial' %}var(--teal){% else %}#fff{% endif %};color:{% if status == 'partial' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Partial</a>
+  <a href="?status=paid" class="btn" style="background:{% if status == 'paid' %}var(--teal){% else %}#fff{% endif %};color:{% if status == 'paid' %}#fff{% else %}var(--ink){% endif %};border:1px solid var(--border);display:inline-flex;align-items:center">Paid</a>
+</div>
+<div class="card">
+  <table>
+    <tr><th>Invoice</th><th>Patient</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th></tr>
+    {% for invoice in invoices %}
+    <tr>
+      <td><a href="{% url 'billing:detail' invoice.pk %}">#{{ invoice.pk }}</a></td>
+      <td>{{ invoice.patient.full_name }}</td>
+      <td>₦{{ invoice.total|floatformat:2|intcomma }}</td>
+      <td>₦{{ invoice.amount_paid|floatformat:2|intcomma }}</td>
+      <td>₦{{ invoice.balance|floatformat:2|intcomma }}</td>
+      <td>
+        {% if invoice.status == 'PAID' %}<span class="badge badge-green">Paid</span>
+        {% elif invoice.status == 'PARTIAL' %}<span class="badge badge-amber">Partial</span>
+        {% elif invoice.status == 'VOID' %}<span class="badge" style="background:#EEE;color:#777">Void</span>
+        {% else %}<span class="badge badge-red">Unpaid</span>{% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" style="color:var(--muted)">No invoices in this view.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

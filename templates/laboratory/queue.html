@@ -1,0 +1,45 @@
+{% extends "core/app_base.html" %}
+{% block title %}Laboratory — Willow Cross HMS{% endblock %}
+{% block content %}
+<h1 style="font-size:22px">Laboratory</h1>
+
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:12px">Awaiting sample collection</h2>
+  <table>
+    <tr><th>Patient</th><th>Test</th><th>Ordered by</th><th>Ordered</th><th></th></tr>
+    {% for order in awaiting_collection %}
+    <tr>
+      <td>{{ order.patient.full_name }}</td>
+      <td>{{ order.test_name }}</td>
+      <td>{{ order.ordered_by|default:"—" }}</td>
+      <td>{{ order.ordered_at|date:"d M H:i" }}</td>
+      <td>
+        <form action="{% url 'laboratory:collect' order.pk %}" method="post" style="display:inline">
+          {% csrf_token %}<button type="submit" style="height:32px;padding:0 14px;font-size:12px">Collect sample</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:var(--muted)">No orders awaiting collection.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:12px">Awaiting result</h2>
+  <table>
+    <tr><th>Patient</th><th>Test</th><th>Sample</th><th>Collected</th><th></th></tr>
+    {% for order in awaiting_result %}
+    <tr>
+      <td>{{ order.patient.full_name }}</td>
+      <td>{{ order.test_name }}</td>
+      <td>{{ order.sample.barcode }}</td>
+      <td>{{ order.sample.collected_at|date:"d M H:i" }}</td>
+      <td><a href="{% url 'laboratory:result' order.pk %}" class="btn" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;font-size:12px">Enter result</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:var(--muted)">No orders awaiting a result.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

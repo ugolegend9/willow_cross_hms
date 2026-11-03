@@ -1,0 +1,16 @@
+{% extends "core/app_base.html" %}
+{% block title %}Register patient — Willow Cross HMS{% endblock %}
+{% block content %}
+<h1 style="font-size:22px">Register new patient</h1>
+<form method="post" class="card" style="max-width:480px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
+  {% endfor %}
+  <button type="submit">Register patient</button>
+</form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "core/app_base.html" %}
+{% block title %}Enter result — {{ order.test_name }}{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">{{ order.test_name }} — {{ order.patient.full_name }}</h1>
+  <div style="font-size:13px;color:var(--muted)">Sample {{ order.sample.barcode }} · <a href="{% url 'laboratory:queue' %}">Back to lab queue</a></div>
+</div>
+<form method="post" class="card" style="max-width:460px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div style="color:var(--red);font-size:13px">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  {% for field in form %}
+  <div>
+    {% if field.name == 'is_abnormal' %}
+    <label style="display:flex;align-items:center;gap:8px">{{ field }} <span>{{ field.label }}</span></label>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px">Overridden automatically when the value and reference range are both plain numbers.</div>
+    {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {% endif %}
+    {% if field.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ field.errors|striptags }}</div>{% endif %}
+  </div>
+  {% endfor %}
+  <button type="submit" style="align-self:flex-start">Save result</button>
+</form>
+{% endblock %}

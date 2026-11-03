@@ -1,0 +1,44 @@
+{% extends "core/app_base.html" %}
+{% block title %}Dispense — {{ patient.full_name }}{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">Dispense to {{ patient.full_name }}</h1>
+  <div style="font-size:13px;color:var(--muted)">
+    MRN {{ patient.mrn }}
+    {% if prescription %} · prescribed: {{ prescription.drug_name }} — {{ prescription.dosage }}, {{ prescription.frequency }} for {{ prescription.duration_days }} days{% endif %}
+    · <a href="{% url 'patients:detail' patient.pk %}">Back to patient profile</a>
+  </div>
+</div>
+
+{% if patient.allergies.all %}
+<div class="card" style="background:#FBEAE8;border-color:#F1CFC9">
+  <h2 style="font-size:14px;color:#8A362D;margin-bottom:8px">⚠ Recorded allergies</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    {% for a in patient.allergies.all %}
+    <span class="badge badge-red">{{ a.substance }} — {{ a.get_severity_display }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<form method="post" class="card" style="max-width:460px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div style="color:var(--red);font-size:13px">{{ form.non_field_errors|striptags }}</div>{% endif %}
+  <div>
+    <label for="{{ form.drug.id_for_label }}">{{ form.drug.label }}</label>
+    {{ form.drug }}
+    {% if form.drug.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ form.drug.errors|striptags }}</div>{% endif %}
+  </div>
+  <div>
+    <label for="{{ form.quantity.id_for_label }}">{{ form.quantity.label }}</label>
+    {{ form.quantity }}
+    {% if form.quantity.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ form.quantity.errors|striptags }}</div>{% endif %}
+  </div>
+  {% if patient.allergies.all %}
+  <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--muted)">
+    {{ form.acknowledge_allergy }} <span>{{ form.acknowledge_allergy.label }}</span>
+  </label>
+  {% endif %}
+  <button type="submit" style="align-self:flex-start">Dispense</button>
+</form>
+{% endblock %}

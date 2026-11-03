@@ -1,0 +1,12 @@
+{% extends "core/app_base.html" %}
+{% block title %}Not permitted — Willow Cross HMS{% endblock %}
+{% block content %}
+<div class="card" style="max-width:520px">
+  <h1 style="font-size:20px;margin-bottom:10px">You don't have permission to view this page</h1>
+  <p style="font-size:14px;color:var(--muted);margin:0 0 16px">
+    Your role ({{ request.user.get_role_display }}) doesn't include access to this area.
+    If you think that's a mistake, ask an administrator.
+  </p>
+  <a href="{% url 'core:dashboard' %}" class="btn" style="display:inline-flex;align-items:center">Back to dashboard</a>
+</div>
+{% endblock %}

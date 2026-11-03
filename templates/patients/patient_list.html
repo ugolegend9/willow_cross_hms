@@ -1,0 +1,27 @@
+{% extends "core/app_base.html" %}
+{% block title %}Patients — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1 style="font-size:22px">Patients</h1>
+  {% if can.register_patient %}<a href="{% url 'patients:register' %}" class="btn" style="display:inline-flex;align-items:center">Register new patient</a>{% endif %}
+</div>
+<form method="get" style="max-width:340px">
+  <input type="text" name="q" value="{{ query }}" placeholder="Search by MRN or name">
+</form>
+<div class="card">
+  <table>
+    <tr><th>MRN</th><th>Name</th><th>Gender</th><th>DOB</th><th>Phone</th></tr>
+    {% for patient in patients %}
+    <tr>
+      <td><a href="{% url 'patients:detail' patient.pk %}">{{ patient.mrn }}</a></td>
+      <td>{{ patient.full_name }}</td>
+      <td>{{ patient.get_gender_display }}</td>
+      <td>{{ patient.date_of_birth }}</td>
+      <td>{{ patient.phone_number }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:var(--muted)">No patients registered yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "core/app_base.html" %}
+{% block title %}{{ admission.patient.full_name }} — Admission{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <h1 style="font-size:22px">{{ admission.patient.full_name }}</h1>
+    <div style="font-size:13px;color:var(--muted)">
+      {{ admission.bed }} · Attending: {{ admission.attending_doctor|default:"—" }} ·
+      {% if admission.status == 'ADMITTED' %}<span class="badge badge-red">Admitted</span>
+      {% else %}<span class="badge badge-green">{{ admission.get_status_display }}</span>{% endif %}
+    </div>
+  </div>
+  {% if admission.status == 'ADMITTED' %}
+  <form action="{% url 'ipd:discharge' admission.pk %}" method="post">
+    {% csrf_token %}
+    <button type="submit" style="background:#fff;color:var(--red);border:1px solid var(--red)">Discharge</button>
+  </form>
+  {% endif %}
+</div>
+{% if admission.diagnosis_summary %}
+<div class="card"><strong>Diagnosis:</strong> {{ admission.diagnosis_summary }}</div>
+{% endif %}
+
+<div style="display:flex;gap:20px">
+  <div class="card" style="flex:1">
+    <h2 style="font-size:15px;margin-bottom:12px">Care plan</h2>
+    {% if admission.status == 'ADMITTED' %}
+    <form method="post" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+      {% csrf_token %}
+      <label for="{{ care_plan_form.instructions.id_for_label }}">{{ care_plan_form.instructions.label }}</label>
+      {{ care_plan_form.instructions }}
+      {% if care_plan_form.instructions.errors %}<div style="color:var(--red);font-size:12px">{{ care_plan_form.instructions.errors|striptags }}</div>{% endif %}
+      <button type="submit" name="add_care_plan" style="align-self:flex-start">Add care plan</button>
+    </form>
+    {% endif %}
+    {% for plan in care_plans %}
+    <div style="padding:10px 0;border-top:1px solid var(--border);font-size:13px">
+      <div>{{ plan.instructions }}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ plan.created_by|default:"—" }} · {{ plan.created_at|date:"d M H:i" }}</div>
+    </div>
+    {% empty %}
+    <div style="color:var(--muted);font-size:13px">No care plan entries yet.</div>
+    {% endfor %}
+  </div>
+
+  <div class="card" style="flex:1">
+    <h2 style="font-size:15px;margin-bottom:12px">Medication administration record</h2>
+    {% if admission.status == 'ADMITTED' %}
+    <form method="post" style="display:flex;gap:8px;margin-bottom:14px;align-items:flex-end">
+      {% csrf_token %}
+      <div style="flex:1"><label for="{{ mar_form.drug_name.id_for_label }}">{{ mar_form.drug_name.label }}</label>{{ mar_form.drug_name }}</div>
+      <div style="flex:1"><label for="{{ mar_form.dose.id_for_label }}">{{ mar_form.dose.label }}</label>{{ mar_form.dose }}</div>
+      <button type="submit" name="add_mar">Log dose</button>
+    </form>
+    {% if mar_form.errors %}<div style="color:var(--red);font-size:12px;margin-bottom:10px">{{ mar_form.errors|striptags }}</div>{% endif %}
+    {% endif %}
+    {% for entry in mar_entries %}
+    <div style="padding:10px 0;border-top:1px solid var(--border);font-size:13px">
+      <div>{{ entry.drug_name }} — {{ entry.dose }}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">{{ entry.administered_by|default:"—" }} · {{ entry.administered_at|date:"d M H:i" }}</div>
+    </div>
+    {% empty %}
+    <div style="color:var(--muted);font-size:13px">No doses logged yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

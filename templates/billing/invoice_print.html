@@ -1,0 +1,105 @@
+{% load humanize %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invoice #{{ invoice.pk }} — {{ hospital.name }}</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  @page { size: A4; margin: 16mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #F5F6F4; color: #1C2B2B; font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 13px; line-height: 1.45; }
+  h1, h2 { font-family: 'Sora', Arial, sans-serif; margin: 0; }
+  .toolbar { max-width: 210mm; margin: 16px auto 0; display: flex; justify-content: space-between; align-items: center; }
+  .toolbar a { color: #14555A; text-decoration: none; font-size: 14px; }
+  .toolbar button { height: 40px; padding: 0 20px; border: 0; border-radius: 8px; background: #14555A; color: #fff; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .sheet { max-width: 210mm; margin: 12px auto 32px; background: #fff; padding: 18mm 16mm; border: 1px solid #E4E7E5; }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; border-bottom: 2px solid #14555A; padding-bottom: 14px; }
+  .head .hospital { font-size: 20px; font-weight: 700; color: #14555A; }
+  .head .muted, .muted { color: #6B7A79; }
+  .head .doc { text-align: right; }
+  .head .doc h1 { font-size: 22px; letter-spacing: .04em; }
+  .stamp { display: inline-block; margin-top: 6px; padding: 3px 12px; border: 1.5px solid currentColor; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+  .stamp.paid { color: #4C8C6B; } .stamp.partial { color: #C98A3B; } .stamp.unpaid { color: #B5453A; } .stamp.void { color: #777; }
+  .parties { display: flex; justify-content: space-between; gap: 24px; margin: 20px 0; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #6B7A79; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #6B7A79; padding: 8px 6px; border-bottom: 1px solid #C9D0CE; }
+  td { padding: 9px 6px; border-bottom: 1px solid #EDEFED; vertical-align: top; }
+  th.r, td.r { text-align: right; white-space: nowrap; }
+  tr { page-break-inside: avoid; }
+  .totals { width: 55%; margin: 14px 0 0 auto; }
+  .totals div { display: flex; justify-content: space-between; padding: 4px 6px; }
+  .totals .balance { border-top: 2px solid #14555A; margin-top: 6px; padding-top: 8px; font-size: 15px; font-weight: 700; }
+  h2 { font-size: 13px; margin: 24px 0 6px; }
+  .foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #E4E7E5; font-size: 11px; color: #6B7A79; display: flex; justify-content: space-between; }
+  @media print {
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .sheet { margin: 0; border: 0; padding: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <a href="{% url 'billing:detail' invoice.pk %}">&larr; Back to invoice</a>
+  <button type="button" onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="sheet">
+  <div class="head">
+    <div>
+      <div class="hospital">{{ hospital.name }}</div>
+      {% if hospital.address %}<div class="muted">{{ hospital.address|linebreaksbr }}</div>{% endif %}
+      {% if hospital.phone %}<div class="muted">Tel: {{ hospital.phone }}</div>{% endif %}
+    </div>
+    <div class="doc">
+      <h1>INVOICE</h1>
+      <div>No. {{ invoice.pk }}</div>
+      <div class="muted">{{ invoice.created_at|date:"d M Y" }}</div>
+      <div class="stamp {{ invoice.status|lower }}">{{ invoice.get_status_display|upper }}</div>
+    </div>
+  </div>
+
+  <div class="parties">
+    <div>
+      <div class="label">Billed to</div>
+      <div><strong>{{ invoice.patient.full_name }}</strong></div>
+      <div class="muted">MRN {{ invoice.patient.mrn }}</div>
+      {% if invoice.patient.phone_number %}<div class="muted">{{ invoice.patient.phone_number }}</div>{% endif %}
+      {% if invoice.patient.address %}<div class="muted">{{ invoice.patient.address|linebreaksbr }}</div>{% endif %}
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Description</th><th class="r">Amount (₦)</th></tr>
+    {% for item in invoice.line_items.all %}
+    <tr><td>{{ item.description }}</td><td class="r">{{ item.amount|floatformat:2|intcomma }}</td></tr>
+    {% empty %}
+    <tr><td colspan="2" class="muted">No charges on this invoice.</td></tr>
+    {% endfor %}
+  </table>
+
+  <div class="totals">
+    <div><span>Total</span><span>₦{{ invoice.total|floatformat:2|intcomma }}</span></div>
+    <div><span>Paid</span><span>₦{{ invoice.amount_paid|floatformat:2|intcomma }}</span></div>
+    <div class="balance"><span>Balance due</span><span>₦{{ invoice.balance|floatformat:2|intcomma }}</span></div>
+  </div>
+
+  {% if invoice.payments.all %}
+  <h2>Payments received</h2>
+  <table>
+    <tr><th>Date</th><th>Method</th><th class="r">Amount (₦)</th></tr>
+    {% for payment in invoice.payments.all %}
+    <tr><td>{{ payment.paid_at|date:"d M Y, H:i" }}</td><td>{{ payment.get_method_display }}</td><td class="r">{{ payment.amount|floatformat:2|intcomma }}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <div class="foot">
+    <span>Printed {% now "d M Y, H:i" %} by {{ request.user.get_full_name|default:request.user.username }}</span>
+    <span>{{ hospital.name }} · Invoice {{ invoice.pk }}</span>
+  </div>
+</div>
+</body>
+</html>

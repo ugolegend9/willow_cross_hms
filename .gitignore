@@ -1,0 +1,19 @@
+# secrets and local config — never commit or ship these
+.env
+
+# local databases
+db.sqlite3
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# collected static files
+staticfiles/
+
+# editors / OS
+.idea/
+.vscode/
+.DS_Store

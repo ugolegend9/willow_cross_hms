@@ -1,0 +1,60 @@
+{% extends "core/app_base.html" %}
+{% load humanize %}
+{% block title %}Inventory — Willow Cross HMS{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">Pharmacy inventory</h1>
+  <div style="font-size:13px;color:var(--muted)"><a href="{% url 'pharmacy:queue' %}">&larr; Back to pending prescriptions</a></div>
+</div>
+
+<div style="display:flex;gap:20px;align-items:flex-start">
+  <form method="post" class="card" style="flex:1;display:flex;flex-direction:column;gap:12px">
+    {% csrf_token %}
+    <h2 style="font-size:15px">Add a drug</h2>
+    {% if drug_form.non_field_errors %}<div style="color:var(--red);font-size:13px">{{ drug_form.non_field_errors|striptags }}</div>{% endif %}
+    {% for field in drug_form %}
+    <div>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" name="add_drug" style="align-self:flex-start">Add drug</button>
+  </form>
+
+  <form method="post" class="card" style="flex:1;display:flex;flex-direction:column;gap:12px">
+    {% csrf_token %}
+    <h2 style="font-size:15px">Receive stock</h2>
+    {% if stock_form.non_field_errors %}<div style="color:var(--red);font-size:13px">{{ stock_form.non_field_errors|striptags }}</div>{% endif %}
+    {% for field in stock_form %}
+    <div>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
+    {% endfor %}
+    <button type="submit" name="add_batch" style="align-self:flex-start">Receive stock</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <tr><th>Drug</th><th>Stock (unexpired)</th><th>Reorder level</th><th>Unit price</th><th></th></tr>
+    {% for drug in drugs %}
+    <tr>
+      <td>{{ drug }}{% if drug.is_controlled %} <span class="badge badge-amber">Controlled</span>{% endif %}</td>
+      <td>
+        {{ drug.total_stock }}
+        {% if drug.is_low_stock %}<span class="badge badge-red" style="margin-left:6px">Low stock</span>{% endif %}
+        {% if drug.has_expiring_batch %}<span class="badge badge-amber" style="margin-left:6px">Expiring soon</span>{% endif %}
+      </td>
+      <td>{{ drug.reorder_level }}</td>
+      <td>₦{{ drug.unit_price|floatformat:2|intcomma }}</td>
+      <td></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:var(--muted)">No drugs in the catalog yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

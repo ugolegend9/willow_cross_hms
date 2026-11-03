@@ -1,0 +1,37 @@
+{% extends "core/app_base.html" %}
+{% block title %}Bed Map — Willow Cross HMS{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center">
+  <h1 style="font-size:22px">Bed Map</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="font-size:13px;color:var(--muted)">{{ available }} of {{ total_beds }} beds available</span>
+    {% if can.manage_beds %}<a href="{% url 'ipd:manage' %}" class="btn" style="display:inline-flex;align-items:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Manage beds &amp; wards</a>{% endif %}
+  </div>
+</div>
+{% for entry in ward_data %}
+<div class="card">
+  <h2 style="font-size:15px;margin-bottom:14px">{{ entry.ward.name }}</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    {% for item in entry.beds %}
+    <div style="width:180px;border:1px solid var(--border);border-radius:10px;padding:14px;
+      {% if item.bed.status == 'AVAILABLE' %}background:#EAF3EC;border-color:#CFE6D8;
+      {% elif item.bed.status == 'OCCUPIED' %}background:#FBEAE8;border-color:#F1CFC9;
+      {% else %}background:#F2F2F2;{% endif %}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;font-size:13px">{{ item.bed.bed_number }}</span>
+        {% if item.bed.status == 'AVAILABLE' %}<span class="badge badge-green">Available</span>
+        {% elif item.bed.status == 'OCCUPIED' %}<span class="badge badge-red">Occupied</span>
+        {% else %}<span class="badge badge-amber">Maintenance</span>{% endif %}
+      </div>
+      {% if item.admission %}
+      <div style="margin-top:10px;font-size:13px">{{ item.admission.patient.full_name }}</div>
+      {% if can.view_admission %}<a href="{% url 'ipd:detail' item.admission.pk %}" style="font-size:12px">View admission →</a>{% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% empty %}
+<div class="card" style="color:var(--muted)">No wards set up yet.</div>
+{% endfor %}
+{% endblock %}

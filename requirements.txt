@@ -1,0 +1,13 @@
+Django>=5.0,<6.2
+PyMySQL>=1.1          # pure-Python MySQL driver — no OS build tools needed, works out of the box
+python-decouple>=3.8
+whitenoise>=6.6       # serves static files from the Django app (required on Vercel)
+dj-database-url>=2.1  # parses the DATABASE_URL environment variable
+certifi>=2024.2.2     # CA bundle for TLS to hosted MySQL (DB_SSL=True)
+
+# Optional, for production: mysqlclient is faster than PyMySQL but needs
+# libmysqlclient-dev (Linux) / mysql-client (macOS via Homebrew) installed
+# at the OS level first. Nothing in this project requires it — settings.py
+# runs entirely on PyMySQL via pymysql.install_as_MySQLdb(). Only add it
+# once your MySQL build tools are actually set up:
+#   mysqlclient>=2.2

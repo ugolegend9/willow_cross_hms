@@ -1,0 +1,70 @@
+{% extends "core/app_base.html" %}
+{% block title %}New invoice — Willow Cross HMS{% endblock %}
+{% block content %}
+<h1 style="font-size:22px">New invoice</h1>
+<form method="post" class="card" style="max-width:560px;display:flex;flex-direction:column;gap:16px">
+  {% csrf_token %}
+  {{ formset.management_form }}
+  <div>
+    <label for="{{ patient_form.patient.id_for_label }}">{{ patient_form.patient.label }}</label>
+    {{ patient_form.patient }}
+    {% if patient_form.patient.errors %}<div style="color:var(--red);font-size:12px;margin-top:4px">{{ patient_form.patient.errors|striptags }}</div>{% endif %}
+  </div>
+
+  <div style="border-top:1px solid var(--border);padding-top:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Line items</div>
+    <div id="line-item-rows">
+      {% for form in formset %}
+      <div class="line-item-row" style="display:flex;gap:10px;margin-bottom:8px;align-items:flex-start">
+        <div style="flex:2">{{ form.description }}
+          {% if form.description.errors %}<div style="color:var(--red);font-size:12px">{{ form.description.errors|striptags }}</div>{% endif %}
+        </div>
+        <div style="flex:1">{{ form.amount }}
+          {% if form.amount.errors %}<div style="color:var(--red);font-size:12px">{{ form.amount.errors|striptags }}</div>{% endif %}
+        </div>
+        <button type="button" class="remove-line" title="Remove this line" style="height:44px;width:40px;padding:0;background:#fff;color:var(--red);border:1px solid var(--border);border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% if formset.non_form_errors %}<div style="color:var(--red);font-size:12px">{{ formset.non_form_errors|striptags }}</div>{% endif %}
+    <button type="button" id="add-line" style="margin-top:4px;background:#fff;color:var(--teal);border:1px solid var(--teal);height:36px;padding:0 14px;font-size:13px">+ Add another line</button>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">Leave a row blank to skip it.</div>
+  </div>
+
+  <button type="submit" style="align-self:flex-start">Create invoice</button>
+</form>
+
+<template id="line-item-empty-form">
+  <div class="line-item-row" style="display:flex;gap:10px;margin-bottom:8px;align-items:flex-start">
+    <div style="flex:2">{{ empty_form.description }}</div>
+    <div style="flex:1">{{ empty_form.amount }}</div>
+    <button type="button" class="remove-line" title="Remove this line" style="height:44px;width:40px;padding:0;background:#fff;color:var(--red);border:1px solid var(--border);border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&times;</button>
+  </div>
+</template>
+
+<script>
+(function () {
+  var rows = document.getElementById('line-item-rows');
+  var totalForms = document.getElementById('id_{{ formset.prefix }}-TOTAL_FORMS');
+  var template = document.getElementById('line-item-empty-form').innerHTML;
+
+  document.getElementById('add-line').addEventListener('click', function () {
+    var index = parseInt(totalForms.value, 10);
+    var html = template.split('__prefix__').join(index);
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = html.trim();
+    rows.appendChild(wrapper.firstChild);
+    totalForms.value = index + 1;
+  });
+
+  rows.addEventListener('click', function (event) {
+    if (!event.target.classList.contains('remove-line')) return;
+    // Every row here is a brand-new, unsaved line item (this is the "New
+    // invoice" form), so removing the row from the page is enough -- there's
+    // nothing saved yet to delete server-side, and a blank/missing slot in
+    // the formset is simply ignored on submit.
+    event.target.closest('.line-item-row').remove();
+  });
+})();
+</script>
+{% endblock %}

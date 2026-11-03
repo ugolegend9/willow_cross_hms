@@ -1,0 +1,22 @@
+{% extends "core/app_base.html" %}
+{% block title %}OPD Queue — Willow Cross HMS{% endblock %}
+{% block content %}
+<h1 style="font-size:22px">OPD Queue</h1>
+<div style="font-size:13px;color:var(--muted)">Patients checked in today, waiting to be seen.</div>
+<div class="card">
+  <table>
+    <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Department</th><th></th></tr>
+    {% for appt in waiting %}
+    <tr>
+      <td>{{ appt.scheduled_for|date:"H:i" }}</td>
+      <td>{{ appt.patient.full_name }}</td>
+      <td>{{ appt.doctor }}</td>
+      <td>{{ appt.department|default:"—" }}</td>
+      <td>{% if can.consult %}<a href="{% url 'opd:consult_from_appointment' appt.patient.pk appt.pk %}" class="btn" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;font-size:12px">Start consultation</a>{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" style="color:var(--muted)">No one checked in yet — patients appear here once checked in from Appointments.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "core/app_base.html" %}
+{% load humanize %}
+{% block title %}Dashboard — Willow Cross HMS{% endblock %}
+{% block content %}
+<div>
+  <h1 style="font-size:22px">Good day, {{ request.user.get_full_name|default:request.user.username }}</h1>
+  <div style="margin-top:4px;font-size:13px;color:var(--muted)">{% now "l, j F Y" %}</div>
+</div>
+<div class="kpi-row">
+  <div class="card kpi">
+    <div class="label">Patients today</div>
+    <div class="value">{{ patients_today }}</div>
+    <div style="margin-top:4px;font-size:12px;color:var(--muted)">{{ total_patients }} total on file</div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Available beds</div>
+    <div class="value">{{ available_beds }} <span style="font-size:14px;font-weight:500;color:var(--muted)">/ {{ total_beds }}</span></div>
+  </div>
+  <div class="card kpi">
+    <div class="label">Appointments today</div>
+    <div class="value">{{ appointments_today_count }}</div>
+  </div>
+  {% if can.pharmacy %}
+  <div class="card kpi">
+    <div class="label">Low stock drugs</div>
+    <div class="value">{{ low_stock_count }}</div>
+  </div>
+  {% endif %}
+  {% if can.lab %}
+  <div class="card kpi">
+    <div class="label">Pending lab results</div>
+    <div class="value">{{ pending_lab_count }}</div>
+  </div>
+  {% endif %}
+  {% if can.view_revenue %}
+  <div class="card kpi">
+    <div class="label">Revenue today</div>
+    <div class="value">₦{{ revenue_today|floatformat:0|intcomma }}</div>
+  </div>
+  {% endif %}
+</div>
+<div style="display:flex;gap:20px">
+  <div class="card" style="flex:2">
+    <h2 style="font-size:15px;margin-bottom:10px">Today's appointments</h2>
+    <table>
+      <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th></tr>
+      {% for appt in todays_appointments %}
+      <tr>
+        <td>{{ appt.scheduled_for|date:"H:i" }}</td>
+        <td>{{ appt.patient.full_name }}</td>
+        <td>{{ appt.doctor }}</td>
+        <td><span class="badge badge-green">{{ appt.get_status_display }}</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" style="color:var(--muted)">No appointments scheduled for today yet.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div class="card" style="flex:1">
+    <h2 style="font-size:15px;margin-bottom:10px">Quick actions</h2>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      {% if can.register_patient %}<a href="{% url 'patients:register' %}" class="btn" style="display:flex;align-items:center;justify-content:center">Register patient</a>{% endif %}
+      {% if can.book %}<a href="{% url 'appointments:create' %}" class="btn" style="display:flex;align-items:center;justify-content:center;background:#fff;color:var(--teal);border:1px solid var(--teal)">Book appointment</a>{% endif %}
+      <a href="{% url 'patients:list' %}" style="font-size:13px">View patient list →</a>
+      <a href="{% url 'appointments:list' %}" style="font-size:13px">View appointments →</a>
+      <a href="{% url 'ipd:bed_map' %}" style="font-size:13px">View bed map →</a>
+      {% if can.billing %}<a href="{% url 'billing:list' %}" style="font-size:13px">View billing →</a>{% endif %}
+      {% if can.pharmacy %}<a href="{% url 'pharmacy:queue' %}" style="font-size:13px">View pharmacy queue →</a>{% endif %}
+      {% if can.lab %}<a href="{% url 'laboratory:queue' %}" style="font-size:13px">View lab queue →</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
