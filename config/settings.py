@@ -129,17 +129,37 @@ else:
 #   2. DB_SSL_CA      - a path to a CA file
 #   3. a file at certs/ca.pem in this project (the CA certificate is public, safe to commit)
 # DB_SSL=True with none of those falls back to the certifi public bundle.
+# The certificate text is cleaned and re-wrapped first, so pasting it with lost line
+# breaks, extra spaces, quotes or literal \n sequences still works.
 if DATABASES['default']['ENGINE'].endswith('mysql'):
-    _ca = config('DB_SSL_CA', default='')
-    _pem = config('DB_SSL_CA_PEM', default='').replace('\\n', '\n').strip()
-    if _pem:
-        import tempfile
+    import re
+    import tempfile
+    _pem = config('DB_SSL_CA_PEM', default='')
+    _ca_file = config('DB_SSL_CA', default='')
+    if not _pem and not _ca_file and (BASE_DIR / 'certs' / 'ca.pem').exists():
+        _ca_file = str(BASE_DIR / 'certs' / 'ca.pem')
+    if not _pem and _ca_file:
+        with open(_ca_file) as _f:
+            _pem = _f.read()
+    _ca = ''
+    if _pem.strip():
+        _blocks = re.findall(r'-----BEGIN CERTIFICATE-----(.*?)-----END CERTIFICATE-----',
+                             _pem.replace('\\n', '\n'), re.S)
+        if not _blocks:
+            raise ImproperlyConfigured(
+                'The database CA certificate (DB_SSL_CA_PEM or certs/ca.pem) has no '
+                '"-----BEGIN CERTIFICATE-----" ... "-----END CERTIFICATE-----" block. '
+                "Paste the full contents of Aiven's ca.pem.")
+        _clean = ''
+        for _b in _blocks:
+            _b = re.sub(r'[^A-Za-z0-9+/=]', '', _b)
+            _clean += ('-----BEGIN CERTIFICATE-----\n'
+                       + '\n'.join(_b[i:i + 64] for i in range(0, len(_b), 64))
+                       + '\n-----END CERTIFICATE-----\n')
         _ca = os.path.join(tempfile.gettempdir(), 'db-ca.pem')
         with open(_ca, 'w') as _f:
-            _f.write(_pem + '\n')
-    elif not _ca and (BASE_DIR / 'certs' / 'ca.pem').exists():
-        _ca = str(BASE_DIR / 'certs' / 'ca.pem')
-    if not _ca and config('DB_SSL', default=False, cast=bool):
+            _f.write(_clean)
+    elif config('DB_SSL', default=False, cast=bool):
         import certifi
         _ca = certifi.where()
     if _ca:
